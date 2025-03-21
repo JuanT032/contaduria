@@ -1,1 +1,212 @@
-# contaduria
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resumen de Contaduría</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            background-color: #f4f4f4; 
+            color: #333; 
+            margin: 0;
+            padding: 0;
+        }
+        #container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 50%;
+            margin: auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        .resumen-box {
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        button {
+            background-color: #2ecc71;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 90%;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+        select {
+            padding: 8px;
+            margin-top: 10px;
+        }
+        #resumen-container { display: none; }
+
+        /* Diseño responsivo para celulares */
+        @media (max-width: 768px) {
+            #container {
+                width: 90%;
+                margin-top: 20px;
+                padding: 15px;
+            }
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <h2>Resumen de Contaduría</h2>
+        
+        <label for="mes">Selecciona un mes:</label>
+        <select id="mes" onchange="filtrarPorMes()">
+            <option value="01">Enero</option>
+            <option value="02">Febrero</option>
+            <option value="03">Marzo</option>
+            <option value="04">Abril</option>
+            <option value="05">Mayo</option>
+            <option value="06">Junio</option>
+            <option value="07">Julio</option>
+            <option value="08">Agosto</option>
+            <option value="09">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+        </select>
+
+        <button onclick="cargarResumen()">Cargar Resumen Anual</button>
+
+        <div id="resumen-container">
+            <div class="resumen-box">
+                <h3>Total de Ingresos: <span id="total-ingresos">$0</span></h3>
+            </div>
+            <div class="resumen-box">
+                <h3>Total de Egresos: <span id="total-egresos">$0</span></h3>
+            </div>
+            <div class="resumen-box">
+                <h3>Saldo Neto: <span id="saldo-neto">$0</span></h3>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Descripción</th>
+                            <th>Tipo</th>
+                            <th>Monto ($COP)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-resumen"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function obtenerRegistros() {
+            return JSON.parse(localStorage.getItem("registros")) || [];
+        }
+
+        function cargarResumen() {
+            let registros = obtenerRegistros();
+            let tabla = document.getElementById("tabla-resumen");
+            let totalIngresos = 0;
+            let totalEgresos = 0;
+
+            tabla.innerHTML = "";
+
+            registros.forEach(r => {
+                let montoFormato = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(r.monto);
+                let fila = `<tr>
+                                <td>${r.fecha}</td>
+                                <td>${r.descripcion}</td>
+                                <td>${r.tipo}</td>
+                                <td>${montoFormato}</td>
+                            </tr>`;
+                tabla.innerHTML += fila;
+
+                if (r.tipo === "Ingreso") {
+                    totalIngresos += r.monto;
+                } else {
+                    totalEgresos += r.monto;
+                }
+            });
+
+            let saldoNeto = totalIngresos - totalEgresos;
+
+            document.getElementById("total-ingresos").innerText = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(totalIngresos);
+            document.getElementById("total-egresos").innerText = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(totalEgresos);
+            document.getElementById("saldo-neto").innerText = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(saldoNeto);
+
+            document.getElementById("resumen-container").style.display = "block";
+        }
+
+        function filtrarPorMes() {
+            let mesSeleccionado = document.getElementById("mes").value;
+            let registros = obtenerRegistros();
+            let tabla = document.getElementById("tabla-resumen");
+            let totalIngresos = 0;
+            let totalEgresos = 0;
+
+            tabla.innerHTML = "";
+
+            registros.forEach(r => {
+                let fechaPartes = r.fecha.split("/"); 
+                let mesRegistro = fechaPartes[1]?.padStart(2, '0'); 
+
+                if (mesRegistro === mesSeleccionado) {
+                    let montoFormato = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(r.monto);
+                    let fila = `<tr>
+                                    <td>${r.fecha}</td>
+                                    <td>${r.descripcion}</td>
+                                    <td>${r.tipo}</td>
+                                    <td>${montoFormato}</td>
+                                </tr>`;
+                    tabla.innerHTML += fila;
+
+                    if (r.tipo === "Ingreso") {
+                        totalIngresos += r.monto;
+                    } else {
+                        totalEgresos += r.monto;
+                    }
+                }
+            });
+
+            document.getElementById("total-ingresos").innerText = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(totalIngresos);
+            document.getElementById("total-egresos").innerText = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP" }).format(totalEgresos);
+        }
+    </script>
+
+</body>
+</html>
+
